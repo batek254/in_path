@@ -1,20 +1,52 @@
 #!/bin/bash
 #script that verifies if given program is in PATH directory list
 
-cmd=$1
-ourpath=$2
-result=1
-oldIFS=$IFS
-IFS=":"
+in_path()
+{
+    cmd=$1
+    ourpath=$2
+    result=1
+    oldIFS=$IFS
+    IFS=":"
 
-for directory in "$ourpath"
-do
-    echo $directory
-    echo $ourpath
-    if [ -x $directory/$cmd ] ; then #-x FILE exists and the execute permission is granted.
-        result=0
+    for directory in "$ourpath"
+    do
+        echo $directory
+        echo $ourpath
+        if [ -x $directory/$cmd ] ; then #-x FILE exists and the execute permission is granted.
+            result=0
+        fi
+    done
+
+    IFS=$oldIFS
+    return $result
+}
+
+check_for_cmd_in_path()
+{
+    var=$1
+
+    if [ "$var" != "" ] ; then
+        if [ "${var:0:1}" = "/" ] ; then
+            if [ ! -x $var ] ; then
+                return 1
+            fi
+        elif ! in_path $var "$PATH" ; then
+            return 2
+        fi
     fi
-done
+}
 
-IFS=$oldIFS
-echo $result
+if [ $# -ne 1 ] ; then
+    echo "Usage: $0 command" > $2
+    exit 1
+fi
+
+check_for_cmd_in_path "$1"
+case $? in
+    0 ) echo "$1 found in PATH" ;;
+    1 ) echo "$1 not found or not executable" ;;
+    2 ) echo "$1 not found in PATH" ;;
+esac
+
+exit 0
